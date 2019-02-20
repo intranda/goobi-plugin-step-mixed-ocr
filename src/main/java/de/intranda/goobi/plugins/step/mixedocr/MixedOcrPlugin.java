@@ -26,6 +26,7 @@ import com.google.gson.Gson;
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.SwapException;
+import de.sub.goobi.persistence.managers.MetadataManager;
 import de.sub.goobi.persistence.managers.StepManager;
 import lombok.extern.log4j.Log4j;
 import spark.Service;
@@ -80,12 +81,11 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
             String templateName = conf.getString("template");
             String sourceDir = conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess()
                     .getImagesTifDirectory(false);
-            ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir,
-                    "antiqua", 10, step.getId().toString(),
-                    step.getProzess().getTitel(), templateName, "OCR", "", callbackUrl, step.getProzess().getTitel());
-            ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir,
-                    "fracture", 10, step.getId().toString(),
-                    step.getProzess().getTitel(), templateName, "OCR", "", callbackUrl, step.getProzess().getTitel());
+            String language = String.join(",", MetadataManager.getAllMetadataValues(step.getProzess().getId(), "docLanguage"));
+            ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir, "antiqua", 10, step.getId()
+                    .toString(), step.getProzess().getTitel(), templateName, "OCR", "", callbackUrl, step.getProzess().getTitel(), language);
+            ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir, "fracture", 10, step.getId()
+                    .toString(), step.getProzess().getTitel(), templateName, "OCR", "", callbackUrl, step.getProzess().getTitel(), language);
             //send both jobs to itm
             Gson gson = new Gson();
             Request.Post(conf.getString("itmUrl"))

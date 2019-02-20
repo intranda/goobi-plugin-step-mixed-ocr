@@ -18,4 +18,5 @@ public class ItmRequest {
     private String serverType;
     private String title;
     private String goobiTitle;
+    private String language;
 }
