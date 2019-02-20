@@ -24,6 +24,7 @@ import org.goobi.production.plugin.interfaces.IRestGuiPlugin;
 import com.google.gson.Gson;
 
 import de.sub.goobi.config.ConfigPlugins;
+import de.sub.goobi.helper.HelperSchritte;
 import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.persistence.managers.MetadataManager;
@@ -162,18 +163,20 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
                 boolean fracture = req.headers("jobType").equals("fracture");
                 MixedOcrDao.setJobDone(jobId, fracture);
                 if (MixedOcrDao.isJobDone(jobId)) {
-                    mergeDirs(jobId);
+                    int stepId = MixedOcrDao.getStepIdForJob(jobId);
+                    Step step = StepManager.getStepById(stepId);
+                    mergeDirs(jobId, step);
                 }
+                HelperSchritte hs = new HelperSchritte();
+                hs.CloseStepObjectAutomatic(step);
                 return "";
             });
         });
 
     }
 
-    private void mergeDirs(long jobId) {
+    private void mergeDirs(long jobId, Step step) {
         try {
-            int stepId = MixedOcrDao.getStepIdForJob(jobId);
-            Step step = StepManager.getStepById(stepId);
             Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr", "partial_" + jobId + "_antiqua", "ocr");
             Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr", "partial_" + jobId + "_fracture", "ocr");
 
@@ -183,9 +186,6 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
             copyToOcrDir(antiquaTargetDir, ocrDir);
             copyToOcrDir(fractureTargetDir, ocrDir);
 
-        } catch (SQLException e) {
-            // TODO Auto-generated catch block
-            log.error(e);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             log.error(e);
