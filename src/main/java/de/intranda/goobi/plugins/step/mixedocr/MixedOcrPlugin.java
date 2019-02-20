@@ -78,10 +78,12 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
             String antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr", "partial_" + jobId + "_antiqua").toString();
             String fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr", "partial_" + jobId + "_fracture").toString();
             String templateName = conf.getString("template");
-            ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), step.getProzess().getImagesTifDirectory(false), antiquaTargetDir,
+            String sourceDir = conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess()
+                    .getImagesTifDirectory(false);
+            ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir,
                     "antiqua", 10, step.getId().toString(),
                     step.getProzess().getTitel(), templateName, "OCR", "", callbackUrl, step.getProzess().getTitel());
-            ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), step.getProzess().getImagesTifDirectory(false), fractureTargetDir,
+            ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir,
                     "fracture", 10, step.getId().toString(),
                     step.getProzess().getTitel(), templateName, "OCR", "", callbackUrl, step.getProzess().getTitel());
             //send both jobs to itm

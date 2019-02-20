@@ -11,6 +11,20 @@ import org.apache.commons.dbutils.handlers.ScalarHandler;
 import de.sub.goobi.persistence.managers.MySQLHelper;
 
 public class MixedOcrDao {
+    /**
+      Schema:
+      
+       CREATE TABLE IF NOT EXISTS `ocrjobs` (
+           `ocrjob_id` int(11) NOT NULL AUTO_INCREMENT,
+           `step_id` int(11) NOT NULL,
+           `fracture_done` tinyint(1) DEFAULT false,
+           `antiqua_done` tinyint(1) DEFAULT false,
+           PRIMARY KEY (`ocrjob_id`)
+       ) DEFAULT CHARSET=utf8mb4; 
+       
+     */
+    
+    
     public static long addJob(int stepId) throws SQLException {
         try (Connection conn = MySQLHelper.getInstance().getConnection()) {
             String sql = "INSERT INTO ocrjobs (step_id, fracture_done, antiqua_done) VALUES (?,?,?)";

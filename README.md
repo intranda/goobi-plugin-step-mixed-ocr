@@ -9,7 +9,7 @@ More information about the functionality of this plugin and the complete documen
 Detail | Description
 --- | ---
 **Plugin identifier**       | goobi-plugin-step-mixedocr
-**Plugin type**             | 
+**Plugin type**             | step
 **Documentation (German)**  | https://docs.intranda.com/
 **Documentation (English)** | - still to be translated -
 

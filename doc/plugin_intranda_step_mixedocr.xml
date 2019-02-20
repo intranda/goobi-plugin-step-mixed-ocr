@@ -1,0 +1,51 @@
+<!-- 
+ * This file is part of a plugin for Goobi - a Workflow tool for the support of mass digitization.
+ * 
+ * Visit the websites for more information. 
+ *          - https://goobi.io
+ *          - https://www.intranda.com
+ *          - https://github.com/intranda/goobi
+ * 
+ * This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free
+ * Software Foundation; either version 2 of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 59
+ * Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ * 
+ -->
+<config_plugin>
+<!--
+        order of configuration is:
+          1.) project name and step name matches
+          2.) step name matches and project is *
+          3.) project name matches and step name is *
+          4.) project name and step name are *
+-->
+    <config>
+		<!-- which projects to use for (can be more then one, otherwise use *) -->
+        <project>*</project>
+        <step>*</step>
+        
+        <template>template.xml</template>
+		<itmUrl>https://itm.mydomain.tld/itm/service</itmUrl>
+		<callbackBaseUrl>https://goobi.mydomain.tld/goobi/</callbackBaseUrl>
+		<useOrigDir>false</useOrigDir>
+    </config>
+
+    <config>
+		<!-- which projects to use for (can be more then one, otherwise use *) -->
+        <project>My special project</project>
+        <project>Archive_Project</project>
+        <step>OCR</step>
+		
+		<template>template_pdfonly.xml</template>
+		<itmUrl>https://itm.mydomain.tld/itm/service</itmUrl>
+		<callbackBaseUrl>https://goobi.mydomain.tld/goobi/</callbackBaseUrl>
+		<useOrigDir>true</useOrigDir>
+    </config>
+    
+    
+</config_plugin>
