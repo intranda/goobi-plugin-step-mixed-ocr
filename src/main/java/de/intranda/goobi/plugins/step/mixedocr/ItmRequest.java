@@ -19,4 +19,5 @@ public class ItmRequest {
     private String title;
     private String goobiTitle;
     private String language;
+    private String callbackUrl;
 }

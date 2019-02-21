@@ -7,19 +7,27 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.HashMap;
 
 import org.apache.commons.configuration.SubnodeConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
+import org.apache.commons.io.FileUtils;
+import org.apache.http.StatusLine;
 import org.apache.http.client.fluent.Request;
+import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.ContentType;
+import org.goobi.beans.LogEntry;
 import org.goobi.beans.Step;
+import org.goobi.production.enums.LogType;
 import org.goobi.production.enums.PluginGuiType;
+import org.goobi.production.enums.PluginReturnValue;
 import org.goobi.production.enums.PluginType;
 import org.goobi.production.enums.StepReturnValue;
 import org.goobi.production.plugin.interfaces.IRestGuiPlugin;
+import org.goobi.production.plugin.interfaces.IStepPluginVersion2;
 
 import com.google.gson.Gson;
 
@@ -28,6 +36,7 @@ import de.sub.goobi.helper.HelperSchritte;
 import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.persistence.managers.MetadataManager;
+import de.sub.goobi.persistence.managers.ProcessManager;
 import de.sub.goobi.persistence.managers.StepManager;
 import lombok.extern.log4j.Log4j;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
@@ -35,7 +44,7 @@ import spark.Service;
 
 @Log4j
 @PluginImplementation
-public class MixedOcrPlugin implements IRestGuiPlugin {
+public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
     private static String title = "intranda_step_mixedocr";
 
     private Step step;
@@ -47,7 +56,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
     }
 
     @Override
-    public boolean execute() {
+    public PluginReturnValue run() {
         // send two jobs to itm, one for antiqua, one for fracture. And add this step to this plugin's db table
         String projectName = step.getProzess().getProjekt().getTitel();
         XMLConfiguration xmlConfig = ConfigPlugins.getPluginConfig(title);
@@ -78,41 +87,76 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
         try {
             // first, we insert the job in the DB
             long jobId = MixedOcrDao.addJob(this.step.getId());
+            //then, we create all needed folders for OCR and copy information to them
+            Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId + "_antiqua");
+            Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId + "_fracture");
+            Files.createDirectories(antiquaTargetDir);
+            Files.createDirectories(fractureTargetDir);
+            Path ocrSelectedFile = Paths.get(step.getProzess().getProcessDataDirectory(), "ocrPages.json");
+            if (Files.exists(ocrSelectedFile)) {
+                Files.copy(ocrSelectedFile, antiquaTargetDir.resolve(ocrSelectedFile.getFileName()));
+                Files.copy(ocrSelectedFile, fractureTargetDir.resolve(ocrSelectedFile.getFileName()));
+            }
+
             String callbackUrl = String.format("%s/plugins/ocr/%d/done", conf.getString("callbackBaseUrl"), jobId);
-            String antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr", "partial_" + jobId + "_antiqua").toString();
-            String fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr", "partial_" + jobId + "_fracture").toString();
+
             String templateName = conf.getString("template");
             String sourceDir = conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess()
                     .getImagesTifDirectory(false);
             String language = String.join(",", MetadataManager.getAllMetadataValues(step.getProzess().getId(), "docLanguage"));
-            ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir, "antiqua", 10, step.getId()
-                    .toString(), step.getProzess().getTitel(), templateName, "OCR", "", callbackUrl, step.getProzess().getTitel(), language);
-            ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir, "fracture", 10, step.getId()
-                    .toString(), step.getProzess().getTitel(), templateName, "OCR", "", callbackUrl, step.getProzess().getTitel(), language);
+            ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir.toString(), "antiqua", 10, step.getId()
+                    .toString(), step.getProzess().getTitel() + "_antiqua", templateName, "OCR", "", callbackUrl, step.getProzess().getTitel(),
+                    language, callbackUrl);
+            ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir.toString(), "fracture", 10, step
+                    .getId()
+                    .toString(), step.getProzess().getTitel() + "_fracture", templateName, "OCR", "", callbackUrl, step.getProzess().getTitel(),
+                    language, callbackUrl);
             //send both jobs to itm
             Gson gson = new Gson();
-            Request.Post(conf.getString("itmUrl"))
+            Response antiquaResp = Request.Post(conf.getString("itmUrl"))
                     .bodyString(gson.toJson(antiquaReq), ContentType.APPLICATION_JSON)
                     .execute();
-            Request.Post(conf.getString("itmUrl"))
+            StatusLine line = antiquaResp.returnResponse().getStatusLine();
+            if (line.getStatusCode() >= 400) {
+                log.error(String.format("antiqua request to itm was unsucsessful. HTTP status code %d. Respone body:\n%s", line.getStatusCode(),
+                        antiquaResp.returnContent().asString()));
+                return PluginReturnValue.ERROR;
+            }
+            Response fractureResp = Request.Post(conf.getString("itmUrl"))
                     .bodyString(gson.toJson(fractureReq), ContentType.APPLICATION_JSON)
                     .execute();
+            line = fractureResp.returnResponse().getStatusLine();
+            if (line.getStatusCode() >= 400) {
+                log.error(String.format("fracture request to itm was unsucsessful. HTTP status code %d. Respone body:\n%s", line.getStatusCode(),
+                        fractureResp.returnContent().asString()));
+                return PluginReturnValue.ERROR;
+            }
         } catch (SQLException e) {
             // TODO Add to goobi log
             log.error(e);
+            return PluginReturnValue.ERROR;
         } catch (IOException e) {
             // TODO Auto-generated catch block
             log.error(e);
+            return PluginReturnValue.ERROR;
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             log.error(e);
+            return PluginReturnValue.ERROR;
         } catch (SwapException e) {
             // TODO Auto-generated catch block
             log.error(e);
+            return PluginReturnValue.ERROR;
         } catch (DAOException e) {
             // TODO Auto-generated catch block
             log.error(e);
+            return PluginReturnValue.ERROR;
         }
+        return PluginReturnValue.WAIT;
+    }
+
+    @Override
+    public boolean execute() {
         return false;
     }
 
@@ -167,10 +211,21 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
                 if (MixedOcrDao.isJobDone(jobId)) {
                     int stepId = MixedOcrDao.getStepIdForJob(jobId);
                     Step step = StepManager.getStepById(stepId);
-                    mergeDirs(jobId, step);
+                    HelperSchritte hs = new HelperSchritte();
+                    if (mergeDirs(jobId, step)) {
+                        hs.CloseStepObjectAutomatic(step);
+                    } else {
+                        LogEntry le = new LogEntry();
+                        le.setProcessId(step.getProzess().getId());
+                        le.setContent("Error merging OCR results");
+                        le.setType(LogType.ERROR);
+                        le.setUserName("Goobi OCR plugin");
+                        le.setCreationDate(new Date());
+
+                        ProcessManager.saveLogEntry(le);
+                        hs.errorStep(step);
+                    }
                 }
-                HelperSchritte hs = new HelperSchritte();
-                hs.CloseStepObjectAutomatic(step);
                 return "";
             });
             http.get("/info", (req, res) -> {
@@ -180,30 +235,41 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
 
     }
 
-    private void mergeDirs(long jobId, Step step) {
+    private boolean mergeDirs(long jobId, Step step) {
         try {
-            Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr", "partial_" + jobId + "_antiqua", "ocr");
-            Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr", "partial_" + jobId + "_fracture", "ocr");
+            Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId + "_antiqua", "ocr");
+            Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId + "_fracture", "ocr");
 
             Path ocrDir = Paths.get(step.getProzess().getOcrDirectory());
             renameOldOcrDirs(ocrDir);
 
-            copyToOcrDir(antiquaTargetDir, ocrDir);
-            copyToOcrDir(fractureTargetDir, ocrDir);
+            if (Files.exists(antiquaTargetDir)) {
+                copyToOcrDir(antiquaTargetDir, ocrDir, step.getProzess().getTitel());
+            }
+            FileUtils.deleteQuietly(antiquaTargetDir.getParent().toFile());
+            if (Files.exists(fractureTargetDir)) {
+                copyToOcrDir(fractureTargetDir, ocrDir, step.getProzess().getTitel());
+            }
+            FileUtils.deleteQuietly(fractureTargetDir.getParent().toFile());
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
             log.error(e);
+            return false;
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             log.error(e);
+            return false;
         } catch (SwapException e) {
             // TODO Auto-generated catch block
             log.error(e);
+            return false;
         } catch (DAOException e) {
             // TODO Auto-generated catch block
             log.error(e);
+            return false;
         }
+        return true;
     }
 
     private void renameOldOcrDirs(Path path) throws IOException {
@@ -214,6 +280,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
             }
             Files.move(path, newPath);
         }
+        Files.createDirectories(path);
     }
 
     private void renameOldOcrDirs(Path origPath, Path path, int i) throws IOException {
@@ -225,10 +292,11 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
         Files.move(path, newPath);
     }
 
-    private void copyToOcrDir(Path sourceDir, Path ocrDir) throws IOException {
+    private void copyToOcrDir(Path sourceDir, Path ocrDir, String processTitle) throws IOException {
         try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(sourceDir)) {
             for (Path p : dirStream) {
-                Path targetDir = ocrDir.resolve(p.getFileName());
+                String targetName = getTargetName(p.getFileName().toString(), processTitle);
+                Path targetDir = ocrDir.resolve(targetName);
                 if (!Files.exists(targetDir)) {
                     Files.createDirectories(targetDir);
                 }
@@ -241,6 +309,11 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
         }
     }
 
+    private String getTargetName(String sourceFolder, String processTitle) {
+        String[] split = sourceFolder.split("_");
+        return processTitle + "_" + split[split.length - 1];
+    }
+
     @Override
     public String[] getJsPaths() {
         return new String[0];
@@ -249,6 +322,12 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
     @Override
     public void extractAssets(Path assetsPath) {
         // no assets
+    }
+
+    @Override
+    public int getInterfaceVersion() {
+        // TODO Auto-generated method stub
+        return 0;
     }
 
 }
