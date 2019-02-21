@@ -30,9 +30,11 @@ import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.persistence.managers.MetadataManager;
 import de.sub.goobi.persistence.managers.StepManager;
 import lombok.extern.log4j.Log4j;
+import net.xeoh.plugins.base.annotations.PluginImplementation;
 import spark.Service;
 
 @Log4j
+@PluginImplementation
 public class MixedOcrPlugin implements IRestGuiPlugin {
     private static String title = "intranda_step_mixedocr";
 
@@ -170,6 +172,9 @@ public class MixedOcrPlugin implements IRestGuiPlugin {
                 HelperSchritte hs = new HelperSchritte();
                 hs.CloseStepObjectAutomatic(step);
                 return "";
+            });
+            http.get("/info", (req, res) -> {
+                return "plugin " + title + " is loaded properly.\n";
             });
         });
 

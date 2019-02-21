@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+
+<project name="goobi-plugin-step-mixedocr">
+	<target name="devbuild">
+		<exec executable="mvn">
+			<arg value="package" />
+		</exec>
+		<copy file="target/plugin_intranda_step_mixedocr.jar" todir="/opt/digiverso/goobi/plugins/step/"/>
+		<exec executable="curl">
+			<arg value="-X"/>
+			<arg value="PUT"/>
+			<arg value="http://localhost:8080/goobi/plugins/reload"/>
+			<arg value="-H"/>
+			<arg value="token: geheim"/>
+		</exec>
+	</target>
+</project>

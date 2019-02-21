@@ -7,13 +7,11 @@
 	<groupId>de.intranda.goobi.plugins.step</groupId>
 	<artifactId>mixedocr</artifactId>
 	<version>${goobi.pluginversion}</version>
-	<packaging>pom</packaging>
+	<packaging>jar</packaging>
 
 	<properties>
 		<goobi.pluginversion>0.0.1-SNAPSHOT</goobi.pluginversion>
-		<dest.folder.main>/opt/digiverso/goobi/plugins/step/</dest.folder.main>
-		<dest.folder.gui>/opt/digiverso/goobi/plugins/GUI/</dest.folder.gui>
-		<jar.name>plugin_intranda_step_example</jar.name>
+		<jar.name>plugin_intranda_step_mixedocr</jar.name>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
@@ -34,6 +32,20 @@
 		</repository>
 	</repositories>
 
+	<build>
+		<finalName>${jar.name}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.12.4</version>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 	<dependencies>
 		<dependency>
 			<groupId>de.intranda.goobi.workflow</groupId>
@@ -53,8 +65,4 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-	<modules>
-		<module>module-gui</module>
-		<module>module-main</module>
-	</modules>
 </project>
