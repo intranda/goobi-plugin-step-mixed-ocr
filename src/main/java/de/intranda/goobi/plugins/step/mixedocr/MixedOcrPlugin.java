@@ -88,8 +88,8 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             // first, we insert the job in the DB
             long jobId = MixedOcrDao.addJob(this.step.getId());
             //then, we create all needed folders for OCR and copy information to them
-            Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId + "_antiqua");
-            Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId + "_fracture");
+            Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId, "antiqua");
+            Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId, "fracture");
             Files.createDirectories(antiquaTargetDir);
             Files.createDirectories(fractureTargetDir);
             Path ocrSelectedFile = Paths.get(step.getProzess().getProcessDataDirectory(), "ocrPages.json");
@@ -237,8 +237,8 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
 
     private boolean mergeDirs(long jobId, Step step) {
         try {
-            Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId + "_antiqua", "ocr");
-            Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId + "_fracture", "ocr");
+            Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId, "antiqua", "ocr");
+            Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId, "fracture", "ocr");
 
             Path ocrDir = Paths.get(step.getProzess().getOcrDirectory());
             renameOldOcrDirs(ocrDir);
@@ -246,11 +246,17 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             if (Files.exists(antiquaTargetDir)) {
                 copyToOcrDir(antiquaTargetDir, ocrDir, step.getProzess().getTitel());
             }
-            FileUtils.deleteQuietly(antiquaTargetDir.getParent().toFile());
+            Path delP = antiquaTargetDir.getParent().getParent();
+            if (Files.exists(delP) && Files.isDirectory(delP) && delP.getFileName().toString().startsWith("ocr_par")) {
+                FileUtils.deleteQuietly(delP.toFile());
+            }
             if (Files.exists(fractureTargetDir)) {
                 copyToOcrDir(fractureTargetDir, ocrDir, step.getProzess().getTitel());
             }
-            FileUtils.deleteQuietly(fractureTargetDir.getParent().toFile());
+            delP = fractureTargetDir.getParent().getParent();
+            if (Files.exists(delP) && Files.isDirectory(delP) && delP.getFileName().toString().startsWith("ocr_par")) {
+                FileUtils.deleteQuietly(delP.toFile());
+            }
 
         } catch (IOException e) {
             // TODO Auto-generated catch block
