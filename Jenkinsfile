@@ -15,7 +15,7 @@ pipeline {
   }
   post {
     success {
-      archiveArtifacts artifacts: 'target/plugin_intranda_step_mixedocr.jar', fingerprint:
+      archiveArtifacts artifacts: 'target/plugin_intranda_step_mixedocr.jar,doc/*', fingerprint:
       true
     }
   }

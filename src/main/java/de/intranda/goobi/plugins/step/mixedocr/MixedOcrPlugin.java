@@ -116,12 +116,11 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
                     .getImagesTifDirectory(false);
             String language = String.join(",", MetadataManager.getAllMetadataValues(step.getProzess().getId(), "docLanguage"));
             ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir.toString(), "antiqua", 10, step.getId()
-                    .toString(), step.getProzess().getTitel() + "_antiqua", templateName, "OCR", "", callbackUrl, step.getProzess().getTitel(),
-                    language, callbackUrl);
+                    .toString(), step.getProzess().getTitel() + "_antiqua", templateName, "OCR", conf.getString("serverType"), callbackUrl, step
+                            .getProzess().getTitel(), language, callbackUrl);
             ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir.toString(), "fracture", 10, step
-                    .getId()
-                    .toString(), step.getProzess().getTitel() + "_fracture", templateName, "OCR", "", callbackUrl, step.getProzess().getTitel(),
-                    language, callbackUrl);
+                    .getId().toString(), step.getProzess().getTitel() + "_fracture", templateName, "OCR", conf.getString("serverType"), callbackUrl,
+                    step.getProzess().getTitel(), language, callbackUrl);
             //send both jobs to itm
             Gson gson = new Gson();
             Response antiquaResp = Request.Post(conf.getString("itmUrl"))

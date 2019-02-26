@@ -30,9 +30,11 @@
         <step>*</step>
         
         <template>template.xml</template>
-		<itmUrl>https://itm.mydomain.tld/itm/service</itmUrl>
-		<callbackBaseUrl>https://goobi.mydomain.tld/goobi/</callbackBaseUrl>
+		<itmUrl>http://localhost:8080/itm/service</itmUrl>
+		<!--  this must be without a trailing slash -->
+		<callbackBaseUrl>http://localhost:8080/goobi</callbackBaseUrl>
 		<useOrigDir>false</useOrigDir>
+		<serverType>intranda-abbyy</serverType>
     </config>
 
     <config>
@@ -45,6 +47,7 @@
 		<itmUrl>https://itm.mydomain.tld/itm/service</itmUrl>
 		<callbackBaseUrl>https://goobi.mydomain.tld/goobi/</callbackBaseUrl>
 		<useOrigDir>true</useOrigDir>
+		<serverType>intranda-abbyy</serverType>
     </config>
     
     
