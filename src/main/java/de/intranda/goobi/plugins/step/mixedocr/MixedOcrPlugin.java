@@ -96,6 +96,17 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             if (Files.exists(ocrSelectedFile)) {
                 Files.copy(ocrSelectedFile, antiquaTargetDir.resolve(ocrSelectedFile.getFileName()));
                 Files.copy(ocrSelectedFile, fractureTargetDir.resolve(ocrSelectedFile.getFileName()));
+            } else {
+                LogEntry le = new LogEntry();
+                le.setProcessId(step.getProzess().getId());
+                le.setContent("Single page OCR configuration file does not exist. Please mark the pages using the 'OcrSelector' plugin.");
+                le.setType(LogType.ERROR);
+                le.setUserName("Goobi OCR plugin");
+                le.setCreationDate(new Date());
+
+                ProcessManager.saveLogEntry(le);
+
+                return PluginReturnValue.ERROR;
             }
 
             String callbackUrl = String.format("%s/plugins/ocr/%d/done", conf.getString("callbackBaseUrl"), jobId);
