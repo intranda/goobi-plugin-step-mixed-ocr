@@ -256,14 +256,10 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             if (Files.exists(antiquaTargetDir)) {
                 copyToOcrDir(antiquaTargetDir, ocrDir, step.getProzess().getTitel());
             }
-            Path delP = antiquaTargetDir.getParent().getParent();
-            if (Files.exists(delP) && Files.isDirectory(delP) && delP.getFileName().toString().startsWith("ocr_par")) {
-                FileUtils.deleteQuietly(delP.toFile());
-            }
             if (Files.exists(fractureTargetDir)) {
                 copyToOcrDir(fractureTargetDir, ocrDir, step.getProzess().getTitel());
             }
-            delP = fractureTargetDir.getParent().getParent();
+            Path delP = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId);
             if (Files.exists(delP) && Files.isDirectory(delP) && delP.getFileName().toString().startsWith("ocr_par")) {
                 FileUtils.deleteQuietly(delP.toFile());
             }
