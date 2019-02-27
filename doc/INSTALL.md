@@ -12,3 +12,13 @@ CREATE TABLE IF NOT EXISTS `ocrjobs`
 ```
 
 Die jar-Datei muss in den `goobi/plugins/step` Ordner gelegt werden. 
+
+Außerdem sollte noch die Goobi REST config unter `/opt/digiverso/goobi/config/goobi_rest.xml` angepasst werden, damit der TaskManager die REST endpoints dieses Plugins erreichen kann:
+
+```xml
+<endpoint path="/plugins/ocr.*">
+    <method name="post">
+        <allow netmask="127.0.0.0/8" token="Xasheax7ai"/>
+    </method>
+</endpoint>
+```
