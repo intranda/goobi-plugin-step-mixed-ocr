@@ -167,7 +167,11 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
 
     @Override
     public boolean execute() {
-        return false;
+        PluginReturnValue ret = this.run();
+        if (ret == PluginReturnValue.ERROR) {
+            return false;
+        }
+        return true;
     }
 
     @Override
