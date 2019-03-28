@@ -10,7 +10,7 @@ Detail | Description
 --- | ---
 **Plugin identifier**       | goobi-plugin-step-mixedocr
 **Plugin type**             | step
-**Documentation (German)**  | https://docs.intranda.com/
+**Documentation (German)**  | https://docs.intranda.com/goobi-workflow-plugins-de/step-plugins/ocr-durchfuehrung-mit-gemischten-schrifttypen
 **Documentation (English)** | - still to be translated -
 
 ## Goobi details
