@@ -1,6 +1,6 @@
 # Goobi workflow Plugin: goobi-plugin-step-mixedocr
 
-Plugin to handle processes with mixed antiqua/fracture pages that were configured manually
+Plugin to handle processes with mixed antiqua/fracture pages that were configured manually.
 
 ## Plugin details
 
