@@ -6,17 +6,40 @@ pipeline {
     }
   }
 
+  options {
+    buildDiscarder logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '15', daysToKeepStr: '90', numToKeepStr: '')
+  }
+
+  triggers {
+    upstream 'goobi-workflow/goobi/master'
+  }
+  
   stages {
+    stage('prepare') {
+      steps {
+        sh 'git clean -fdx'
+      }
+    }
+
     stage('build') {
       steps {
-        sh 'mvn -f pom.xml package'
+        sh 'mvn -f pom.xml install'
+        recordIssues enabledForFailure: true, aggregatingResults: true, tools: [java(), javaDoc()]
       }
     }
   }
+  
   post {
     success {
       archiveArtifacts artifacts: '**/target/*.jar, */plugin_*.xml, plugin_*.xml', fingerprint: true, onlyIfSuccessful: true
-      true
+    }
+    changed {
+      emailext(
+        subject: '${DEFAULT_SUBJECT}',
+        body: '${DEFAULT_CONTENT}',
+        recipientProviders: [requestor(),culprits()],
+        attachLog: true
+      )
     }
   }
 }
