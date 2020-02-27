@@ -1,14 +1,20 @@
 package de.intranda.goobi.plugins.step.mixedocr;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.configuration.SubnodeConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
@@ -28,9 +34,16 @@ import org.goobi.production.enums.PluginType;
 import org.goobi.production.enums.StepReturnValue;
 import org.goobi.production.plugin.interfaces.IRestGuiPlugin;
 import org.goobi.production.plugin.interfaces.IStepPluginVersion2;
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 
 import com.google.gson.Gson;
 
+import de.intranda.digiverso.ocr.alto.model.structureclasses.Page;
+import de.intranda.digiverso.ocr.alto.model.structureclasses.logical.AltoDocument;
+import de.intranda.digiverso.ocr.alto.model.structureclasses.logical.Chapter;
 import de.sub.goobi.config.ConfigPlugins;
 import de.sub.goobi.helper.HelperSchritte;
 import de.sub.goobi.helper.exceptions.DAOException;
@@ -58,32 +71,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
     @Override
     public PluginReturnValue run() {
         // send two jobs to itm, one for antiqua, one for fracture. And add this step to this plugin's db table
-        String projectName = step.getProzess().getProjekt().getTitel();
-        XMLConfiguration xmlConfig = ConfigPlugins.getPluginConfig(title);
-        xmlConfig.setExpressionEngine(new XPathExpressionEngine());
-        xmlConfig.setReloadingStrategy(new FileChangedReloadingStrategy());
-
-        SubnodeConfiguration conf = null;
-
-        // order of configuration is:
-        // 1.) project name and step name matches
-        // 2.) step name matches and project is *
-        // 3.) project name matches and step name is *
-        // 4.) project name and step name are *
-        try {
-            conf = xmlConfig
-                    .configurationAt("//config[./project = '" + projectName + "'][./step = '" + step.getTitel() + "']");
-        } catch (IllegalArgumentException e) {
-            try {
-                conf = xmlConfig.configurationAt("//config[./project = '*'][./step = '" + step.getTitel() + "']");
-            } catch (IllegalArgumentException e1) {
-                try {
-                    conf = xmlConfig.configurationAt("//config[./project = '" + projectName + "'][./step = '*']");
-                } catch (IllegalArgumentException e2) {
-                    conf = xmlConfig.configurationAt("//config[./project = '*'][./step = '*']");
-                }
-            }
-        }
+        SubnodeConfiguration conf = getConfig();
         try {
             // first, we insert the job in the DB
             long jobId = MixedOcrDao.addJob(this.step.getId());
@@ -116,10 +104,14 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
                     .getImagesTifDirectory(false);
             String language = String.join(",", MetadataManager.getAllMetadataValues(step.getProzess().getId(), "docLanguage"));
             ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir.toString(), "antiqua", 10, step.getId()
-                    .toString(), step.getProzess().getTitel() + "_antiqua", templateName, "OCR", conf.getString("serverType"), callbackUrl, step
-                            .getProzess().getTitel(), language, callbackUrl);
+                    .toString(), step.getProzess().getTitel() + "_antiqua", templateName, "OCR", conf.getString("serverType"), callbackUrl,
+                    step
+                            .getProzess()
+                            .getTitel(),
+                    language, callbackUrl);
             ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir.toString(), "fracture", 10, step
-                    .getId().toString(), step.getProzess().getTitel() + "_fracture", templateName, "OCR", conf.getString("serverType"), callbackUrl,
+                    .getId()
+                    .toString(), step.getProzess().getTitel() + "_fracture", templateName, "OCR", conf.getString("serverType"), callbackUrl,
                     step.getProzess().getTitel(), language, callbackUrl);
             //send both jobs to itm
             Gson gson = new Gson();
@@ -163,6 +155,36 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             return PluginReturnValue.ERROR;
         }
         return PluginReturnValue.WAIT;
+    }
+
+    public SubnodeConfiguration getConfig() {
+        String projectName = step.getProzess().getProjekt().getTitel();
+        XMLConfiguration xmlConfig = ConfigPlugins.getPluginConfig(title);
+        xmlConfig.setExpressionEngine(new XPathExpressionEngine());
+        xmlConfig.setReloadingStrategy(new FileChangedReloadingStrategy());
+
+        SubnodeConfiguration conf = null;
+
+        // order of configuration is:
+        // 1.) project name and step name matches
+        // 2.) step name matches and project is *
+        // 3.) project name matches and step name is *
+        // 4.) project name and step name are *
+        try {
+            conf = xmlConfig
+                    .configurationAt("//config[./project = '" + projectName + "'][./step = '" + step.getTitel() + "']");
+        } catch (IllegalArgumentException e) {
+            try {
+                conf = xmlConfig.configurationAt("//config[./project = '*'][./step = '" + step.getTitel() + "']");
+            } catch (IllegalArgumentException e1) {
+                try {
+                    conf = xmlConfig.configurationAt("//config[./project = '" + projectName + "'][./step = '*']");
+                } catch (IllegalArgumentException e2) {
+                    conf = xmlConfig.configurationAt("//config[./project = '*'][./step = '*']");
+                }
+            }
+        }
+        return conf;
     }
 
     @Override
@@ -226,7 +248,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
                     int stepId = MixedOcrDao.getStepIdForJob(jobId);
                     Step step = StepManager.getStepById(stepId);
                     HelperSchritte hs = new HelperSchritte();
-                    if (mergeDirs(jobId, step)) {
+                    if (mergeDirs(jobId, step) && fillMissingAlto(step, getConfig())) {
                         hs.CloseStepObjectAutomatic(step);
                     } else {
                         LogEntry le = new LogEntry();
@@ -247,6 +269,47 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             });
         });
 
+    }
+
+    private boolean fillMissingAlto(Step step, SubnodeConfiguration conf) {
+        try {
+            Path altoDir = Paths.get(step.getProzess().getOcrAltoDirectory());
+            final Set<String> altoNames = new HashSet<>(Arrays.asList(altoDir.toFile().list()));
+            String sourceDirStr = conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess()
+                    .getImagesTifDirectory(false);
+            Path sourceDir = Paths.get(sourceDirStr);
+            String[] sourceFiles = sourceDir.toFile().list();
+            List<String> missingAlto = filterMissingAlto(altoNames, sourceFiles);
+            for (String altoName : missingAlto) {
+                createEmptyAlto(altoDir.resolve(altoName));
+            }
+        } catch (SwapException | DAOException | IOException | InterruptedException e) {
+            log.error(e);
+            return false;
+        }
+        return true;
+    }
+
+    public static void createEmptyAlto(Path altoPath) throws IOException {
+        AltoDocument emptyAlto = new AltoDocument();
+        Chapter chap = new Chapter();
+        emptyAlto.addChild(chap);
+        Page p = new Page();
+        p.addAdditionalAttribute(new Attribute("PHYSICAL_IMG_NR", "1"));
+        chap.addChild(p);
+        Element el = emptyAlto.writeToDom();
+        XMLOutputter xmlOut = new XMLOutputter(Format.getPrettyFormat());
+        try (OutputStream out = Files.newOutputStream(altoPath)) {
+            xmlOut.output(el, out);
+        }
+    }
+
+    public static List<String> filterMissingAlto(Set<String> altoNames, String[] sourceFiles) {
+        return Arrays.stream(sourceFiles).map(name -> {
+            return name.substring(0, name.lastIndexOf('.')) + ".xml";
+        })
+                .filter(name -> !altoNames.contains(name))
+                .collect(Collectors.toList());
     }
 
     private boolean mergeDirs(long jobId, Step step) {
