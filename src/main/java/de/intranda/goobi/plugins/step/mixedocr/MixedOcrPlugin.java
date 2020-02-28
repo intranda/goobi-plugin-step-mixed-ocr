@@ -71,7 +71,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
     @Override
     public PluginReturnValue run() {
         // send two jobs to itm, one for antiqua, one for fracture. And add this step to this plugin's db table
-        SubnodeConfiguration conf = getConfig();
+        SubnodeConfiguration conf = getConfig(step);
         try {
             // first, we insert the job in the DB
             long jobId = MixedOcrDao.addJob(this.step.getId());
@@ -157,7 +157,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
         return PluginReturnValue.WAIT;
     }
 
-    public SubnodeConfiguration getConfig() {
+    public SubnodeConfiguration getConfig(Step step) {
         String projectName = step.getProzess().getProjekt().getTitel();
         XMLConfiguration xmlConfig = ConfigPlugins.getPluginConfig(title);
         xmlConfig.setExpressionEngine(new XPathExpressionEngine());
@@ -248,7 +248,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
                     int stepId = MixedOcrDao.getStepIdForJob(jobId);
                     Step step = StepManager.getStepById(stepId);
                     HelperSchritte hs = new HelperSchritte();
-                    if (mergeDirs(jobId, step) && fillMissingAlto(step, getConfig())) {
+                    if (mergeDirs(jobId, step) && fillMissingAlto(step, getConfig(step))) {
                         hs.CloseStepObjectAutomatic(step);
                     } else {
                         LogEntry le = new LogEntry();
@@ -274,6 +274,10 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
     private boolean fillMissingAlto(Step step, SubnodeConfiguration conf) {
         try {
             Path altoDir = Paths.get(step.getProzess().getOcrAltoDirectory());
+            if (!Files.exists(altoDir)) {
+                // maybe there is no alto needed here...
+                return true;
+            }
             final Set<String> altoNames = new HashSet<>(Arrays.asList(altoDir.toFile().list()));
             String sourceDirStr = conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess()
                     .getImagesTifDirectory(false);
