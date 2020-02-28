@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -19,10 +19,10 @@ import org.junit.Test;
 public class TestMixedOcrPlugin {
     @Test
     public void testFilterMissingAlto() {
-        Set<String> altoNames = new HashSet<>(Collections.singletonList("0001.xml"));
-        String[] imageNames = new String[] { "0001.tif", "0002.tif" };
+        Set<String> altoNames = new HashSet<>(Arrays.asList(new String[] { "00000001.xml", "00000002.xml", "00000003.xml" }));
+        String[] imageNames = new String[] { "00000001.tif", "00000002.tif", "00000002.tif", "00000001_Redacted.tif" };
         List<String> missing = MixedOcrPlugin.filterMissingAlto(altoNames, imageNames);
-        assertTrue(missing.contains("0002.xml"));
+        assertTrue(missing.contains("00000001_Redacted.xml"));
     }
 
     @Test
