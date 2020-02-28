@@ -51,11 +51,11 @@ import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.persistence.managers.MetadataManager;
 import de.sub.goobi.persistence.managers.ProcessManager;
 import de.sub.goobi.persistence.managers.StepManager;
-import lombok.extern.log4j.Log4j;
+import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
 import spark.Service;
 
-@Log4j
+@Log4j2
 @PluginImplementation
 public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
     private static String title = "intranda_step_mixedocr";
@@ -276,6 +276,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             Path altoDir = Paths.get(step.getProzess().getOcrAltoDirectory());
             if (!Files.exists(altoDir)) {
                 // maybe there is no alto needed here...
+                log.warn("no alto dir found. Skip adding missing alto!");
                 return true;
             }
             final Set<String> altoNames = new HashSet<>(Arrays.asList(altoDir.toFile().list()));
