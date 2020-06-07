@@ -1,17 +1,22 @@
 # Goobi workflow Plugin: goobi-plugin-step-mixedocr
 
-Plugin to handle processes with mixed antiqua/fracture pages that were configured manually.
+<img src="https://goobi.io/wp-content/uploads/logo_goobi_plugin.png" align="right" style="margin:0 0 20px 20px;" alt="Plugin for Goobi workflow" width="175" height="109">
+
+This is a Goobi plugin for performing OCR with mixed fonts. Images should be marked with the "OCR Page Selection" plugin.
+
+This is a plugin for Goobi workflow, the open source workflow tracking software for digitisation projects. More information about Goobi workflow is available under https://goobi.io. If you want to get in touch with the user community simply go to https://community.goobi.io.
 
 ## Plugin details
 
-More information about the functionality of this plugin and the complete documentation can be found in the central documentation area at https://docs.intranda.com
+More information about the functionality of this plugin and the complete documentation can be found in the central documentation area at https://docs.goobi.io
 
 Detail | Description
 --- | ---
 **Plugin identifier**       | goobi-plugin-step-mixedocr
-**Plugin type**             | step
-**Documentation (German)**  | https://docs.intranda.com/goobi-workflow-plugins-de/step-plugins/ocr-durchfuehrung-mit-gemischten-schrifttypen
-**Documentation (English)** | - still to be translated -
+**Plugin type**             | Step plugin
+**Licence**                 | GPL 2.0 or newer  
+**Documentation (German)**  | https://docs.goobi.io/goobi-workflow-plugins-de/step/intranda_step_mixedocr
+**Documentation (English)** | https://docs.goobi.io/goobi-workflow-plugins-en/step/intranda_step_mixedocr
 
 ## Goobi details
 
@@ -33,4 +38,3 @@ Contact | Details
 **Address**       | Bertha-von-Suttner-Str. 9, 37085 Göttingen, Germany
 **Web site**      | https://www.intranda.com
 **Twitter**       | https://twitter.com/intranda
-
