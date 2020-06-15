@@ -12,7 +12,7 @@ More information about the functionality of this plugin and the complete documen
 
 Detail | Description
 --- | ---
-**Plugin identifier**       | goobi-plugin-step-mixedocr
+**Plugin identifier**       | intranda_step_mixedocr
 **Plugin type**             | Step plugin
 **Licence**                 | GPL 2.0 or newer  
 **Documentation (German)**  | https://docs.goobi.io/goobi-workflow-plugins-de/step/intranda_step_mixedocr
