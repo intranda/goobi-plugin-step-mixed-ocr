@@ -1,5 +1,6 @@
 package de.intranda.goobi.plugins.step.mixedocr;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.DirectoryStream;
@@ -21,9 +22,9 @@ import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
 import org.apache.commons.io.FileUtils;
+import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.fluent.Request;
-import org.apache.http.client.fluent.Response;
 import org.apache.http.entity.ContentType;
 import org.goobi.beans.LogEntry;
 import org.goobi.beans.Step;
@@ -115,22 +116,28 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
                     step.getProzess().getTitel(), language, callbackUrl);
             //send both jobs to itm
             Gson gson = new Gson();
-            Response antiquaResp = Request.Post(conf.getString("itmUrl"))
+            HttpResponse antiquaResp = Request.Post(conf.getString("itmUrl"))
                     .bodyString(gson.toJson(antiquaReq), ContentType.APPLICATION_JSON)
-                    .execute();
-            StatusLine line = antiquaResp.returnResponse().getStatusLine();
+                    .execute()
+                    .returnResponse();
+            StatusLine line = antiquaResp.getStatusLine();
             if (line.getStatusCode() >= 400) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                antiquaResp.getEntity().writeTo(baos);
                 log.error(String.format("antiqua request to itm was unsucsessful. HTTP status code %d. Respone body:\n%s", line.getStatusCode(),
-                        antiquaResp.returnContent().asString()));
+                        new String(baos.toByteArray())));
                 return PluginReturnValue.ERROR;
             }
-            Response fractureResp = Request.Post(conf.getString("itmUrl"))
+            HttpResponse fractureResp = Request.Post(conf.getString("itmUrl"))
                     .bodyString(gson.toJson(fractureReq), ContentType.APPLICATION_JSON)
-                    .execute();
-            line = fractureResp.returnResponse().getStatusLine();
+                    .execute()
+                    .returnResponse();
+            line = fractureResp.getStatusLine();
             if (line.getStatusCode() >= 400) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                fractureResp.getEntity().writeTo(baos);
                 log.error(String.format("fracture request to itm was unsucsessful. HTTP status code %d. Respone body:\n%s", line.getStatusCode(),
-                        fractureResp.returnContent().asString()));
+                        new String(baos.toByteArray())));
                 return PluginReturnValue.ERROR;
             }
         } catch (SQLException e) {
