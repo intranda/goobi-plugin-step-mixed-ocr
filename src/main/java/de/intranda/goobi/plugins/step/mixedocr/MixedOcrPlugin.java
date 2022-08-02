@@ -107,8 +107,8 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir.toString(), "antiqua", 10, step.getId()
                     .toString(), step.getProzess().getTitel() + "_antiqua", templateName, "OCR", conf.getString("serverType"), callbackUrl,
                     step
-                            .getProzess()
-                            .getTitel(),
+                    .getProzess()
+                    .getTitel(),
                     language, callbackUrl);
             ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir.toString(), "fracture", 10, step
                     .getId()
@@ -145,10 +145,6 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             log.error(e);
             return PluginReturnValue.ERROR;
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            log.error(e);
-            return PluginReturnValue.ERROR;
-        } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             log.error(e);
             return PluginReturnValue.ERROR;
@@ -295,7 +291,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             for (String altoName : missingAlto) {
                 createEmptyAlto(altoDir.resolve(altoName));
             }
-        } catch (SwapException | DAOException | IOException | InterruptedException e) {
+        } catch (SwapException | DAOException | IOException e) {
             log.error(e);
             return false;
         }
@@ -347,15 +343,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
             // TODO Auto-generated catch block
             log.error(e);
             return false;
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            log.error(e);
-            return false;
         } catch (SwapException e) {
-            // TODO Auto-generated catch block
-            log.error(e);
-            return false;
-        } catch (DAOException e) {
             // TODO Auto-generated catch block
             log.error(e);
             return false;
