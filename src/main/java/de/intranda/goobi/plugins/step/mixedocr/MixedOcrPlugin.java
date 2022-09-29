@@ -10,7 +10,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +25,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
-import org.goobi.beans.LogEntry;
 import org.goobi.beans.Step;
 import org.goobi.production.enums.LogType;
 import org.goobi.production.enums.PluginGuiType;
@@ -46,11 +44,11 @@ import de.intranda.digiverso.ocr.alto.model.structureclasses.Page;
 import de.intranda.digiverso.ocr.alto.model.structureclasses.logical.AltoDocument;
 import de.intranda.digiverso.ocr.alto.model.structureclasses.logical.Chapter;
 import de.sub.goobi.config.ConfigPlugins;
+import de.sub.goobi.helper.Helper;
 import de.sub.goobi.helper.HelperSchritte;
 import de.sub.goobi.helper.exceptions.DAOException;
 import de.sub.goobi.helper.exceptions.SwapException;
 import de.sub.goobi.persistence.managers.MetadataManager;
-import de.sub.goobi.persistence.managers.ProcessManager;
 import de.sub.goobi.persistence.managers.StepManager;
 import lombok.extern.log4j.Log4j2;
 import net.xeoh.plugins.base.annotations.PluginImplementation;
@@ -86,34 +84,24 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
                 Files.copy(ocrSelectedFile, antiquaTargetDir.resolve(ocrSelectedFile.getFileName()));
                 Files.copy(ocrSelectedFile, fractureTargetDir.resolve(ocrSelectedFile.getFileName()));
             } else {
-                LogEntry le = new LogEntry();
-                le.setProcessId(step.getProzess().getId());
-                le.setContent("Single page OCR configuration file does not exist. Please mark the pages using the 'OcrSelector' plugin.");
-                le.setType(LogType.ERROR);
-                le.setUserName("Goobi OCR plugin");
-                le.setCreationDate(new Date());
-
-                ProcessManager.saveLogEntry(le);
-
+                Helper.addMessageToProcessJournal(step.getProzess().getId(), LogType.ERROR,
+                        "Single page OCR configuration file does not exist. Please mark the pages using the 'OcrSelector' plugin.",
+                        "Goobi OCR plugin");
                 return PluginReturnValue.ERROR;
             }
 
             String callbackUrl = String.format("%s/plugins/ocr/%d/done", conf.getString("callbackBaseUrl"), jobId);
 
             String templateName = conf.getString("template");
-            String sourceDir = conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess()
-                    .getImagesTifDirectory(false);
+            String sourceDir =
+                    conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess().getImagesTifDirectory(false);
             String language = String.join(",", MetadataManager.getAllMetadataValues(step.getProzess().getId(), "docLanguage"));
-            ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir.toString(), "antiqua", 10, step.getId()
-                    .toString(), step.getProzess().getTitel() + "_antiqua", templateName, "OCR", conf.getString("serverType"), callbackUrl,
-                    step
-                    .getProzess()
-                    .getTitel(),
-                    language, callbackUrl);
-            ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir.toString(), "fracture", 10, step
-                    .getId()
-                    .toString(), step.getProzess().getTitel() + "_fracture", templateName, "OCR", conf.getString("serverType"), callbackUrl,
-                    step.getProzess().getTitel(), language, callbackUrl);
+            ItmRequest antiquaReq = new ItmRequest(step.getProcessId().toString(), sourceDir, antiquaTargetDir.toString(), "antiqua", 10,
+                    step.getId().toString(), step.getProzess().getTitel() + "_antiqua", templateName, "OCR", conf.getString("serverType"),
+                    callbackUrl, step.getProzess().getTitel(), language, callbackUrl);
+            ItmRequest fractureReq = new ItmRequest(step.getProcessId().toString(), sourceDir, fractureTargetDir.toString(), "fracture", 10,
+                    step.getId().toString(), step.getProzess().getTitel() + "_fracture", templateName, "OCR", conf.getString("serverType"),
+                    callbackUrl, step.getProzess().getTitel(), language, callbackUrl);
             //send both jobs to itm
             Gson gson = new Gson();
             HttpResponse antiquaResp = Request.Post(conf.getString("itmUrl"))
@@ -174,8 +162,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
         // 3.) project name matches and step name is *
         // 4.) project name and step name are *
         try {
-            conf = xmlConfig
-                    .configurationAt("//config[./project = '" + projectName + "'][./step = '" + step.getTitel() + "']");
+            conf = xmlConfig.configurationAt("//config[./project = '" + projectName + "'][./step = '" + step.getTitel() + "']");
         } catch (IllegalArgumentException e) {
             try {
                 conf = xmlConfig.configurationAt("//config[./project = '*'][./step = '" + step.getTitel() + "']");
@@ -254,14 +241,9 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
                     if (mergeDirs(jobId, step) && fillMissingAlto(step, getConfig(step))) {
                         hs.CloseStepObjectAutomatic(step);
                     } else {
-                        LogEntry le = new LogEntry();
-                        le.setProcessId(step.getProzess().getId());
-                        le.setContent("Error merging OCR results");
-                        le.setType(LogType.ERROR);
-                        le.setUserName("Goobi OCR plugin");
-                        le.setCreationDate(new Date());
-
-                        ProcessManager.saveLogEntry(le);
+                        Helper.addMessageToProcessJournal(step.getProzess().getId(), LogType.ERROR,
+                                "Error merging OCR results",
+                                "Goobi OCR plugin");
                         hs.errorStep(step);
                     }
                 }
@@ -283,8 +265,8 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
                 return true;
             }
             final Set<String> altoNames = new HashSet<>(Arrays.asList(altoDir.toFile().list()));
-            String sourceDirStr = conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess()
-                    .getImagesTifDirectory(false);
+            String sourceDirStr =
+                    conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess().getImagesTifDirectory(false);
             Path sourceDir = Paths.get(sourceDirStr);
             String[] sourceFiles = sourceDir.toFile().list();
             List<String> missingAlto = filterMissingAlto(altoNames, sourceFiles);
@@ -315,9 +297,7 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
     public static List<String> filterMissingAlto(Set<String> altoNames, String[] sourceFiles) {
         return Arrays.stream(sourceFiles).map(name -> {
             return name.substring(0, name.lastIndexOf('.')) + ".xml";
-        })
-                .filter(name -> !altoNames.contains(name))
-                .collect(Collectors.toList());
+        }).filter(name -> !altoNames.contains(name)).collect(Collectors.toList());
     }
 
     private boolean mergeDirs(long jobId, Step step) {
