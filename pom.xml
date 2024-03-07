@@ -7,7 +7,7 @@
     <relativePath />
   </parent>
   <groupId>io.goobi.workflow.plugin</groupId>
-  <artifactId>plugin-step-mixedocr</artifactId>
+  <artifactId>plugin-step-mixed-ocr</artifactId>
   <packaging>pom</packaging>
   <modules>
     <module>module-base</module>
