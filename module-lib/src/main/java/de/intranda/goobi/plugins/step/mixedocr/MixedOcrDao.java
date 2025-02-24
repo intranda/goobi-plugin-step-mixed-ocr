@@ -1,6 +1,7 @@
 package de.intranda.goobi.plugins.step.mixedocr;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.apache.commons.dbutils.QueryRunner;
@@ -43,9 +44,7 @@ public class MixedOcrDao {
         try (Connection conn = MySQLHelper.getInstance().getConnection()) {
             QueryRunner run = new QueryRunner();
             return run.query(conn, "SELECT * FROM ocrjobs WHERE ocrjob_id=? AND antiqua_done=true AND fracture_done=true;",
-                    MySQLHelper.resultSetToBooleanHandler
-
-                    , jobId);
+                    ResultSet::next, jobId);
         }
     }
 

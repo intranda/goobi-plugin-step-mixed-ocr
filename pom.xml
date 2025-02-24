@@ -10,7 +10,9 @@
   <artifactId>plugin-step-mixed-ocr</artifactId>
   <packaging>pom</packaging>
   <modules>
+    <module>module-api</module>
     <module>module-base</module>
+    <module>module-lib</module>
   </modules>
   <repositories>
     <repository>
