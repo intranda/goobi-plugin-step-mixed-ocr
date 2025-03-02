@@ -1,62 +1,36 @@
 package de.intranda.goobi.plugins.step.mixedocr;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.google.gson.Gson;
+import de.sub.goobi.config.ConfigPlugins;
+import de.sub.goobi.helper.Helper;
+import de.sub.goobi.helper.exceptions.DAOException;
+import de.sub.goobi.helper.exceptions.SwapException;
+import de.sub.goobi.persistence.managers.MetadataManager;
+import lombok.extern.log4j.Log4j2;
+import net.xeoh.plugins.base.annotations.PluginImplementation;
 import org.apache.commons.configuration.SubnodeConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.configuration.reloading.FileChangedReloadingStrategy;
 import org.apache.commons.configuration.tree.xpath.XPathExpressionEngine;
-import org.apache.commons.io.FileUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
 import org.apache.http.client.fluent.Request;
 import org.apache.http.entity.ContentType;
 import org.goobi.beans.Step;
-import org.goobi.production.enums.LogType;
-import org.goobi.production.enums.PluginGuiType;
-import org.goobi.production.enums.PluginReturnValue;
-import org.goobi.production.enums.PluginType;
-import org.goobi.production.enums.StepReturnValue;
-import org.goobi.production.plugin.interfaces.IRestGuiPlugin;
+import org.goobi.production.enums.*;
 import org.goobi.production.plugin.interfaces.IStepPluginVersion2;
-import org.jdom2.Attribute;
-import org.jdom2.Element;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
 
-import com.google.gson.Gson;
-
-import de.intranda.digiverso.ocr.alto.model.structureclasses.Page;
-import de.intranda.digiverso.ocr.alto.model.structureclasses.logical.AltoDocument;
-import de.intranda.digiverso.ocr.alto.model.structureclasses.logical.Chapter;
-import de.sub.goobi.config.ConfigPlugins;
-import de.sub.goobi.helper.Helper;
-import de.sub.goobi.helper.HelperSchritte;
-import de.sub.goobi.helper.exceptions.DAOException;
-import de.sub.goobi.helper.exceptions.SwapException;
-import de.sub.goobi.persistence.managers.MetadataManager;
-import de.sub.goobi.persistence.managers.StepManager;
-import lombok.extern.log4j.Log4j2;
-import net.xeoh.plugins.base.annotations.PluginImplementation;
-import spark.Service;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.SQLException;
+import java.util.HashMap;
 
 @Log4j2
 @PluginImplementation
-public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
+public class MixedOcrPlugin implements IStepPluginVersion2 {
     private static String title = "intranda_step_mixedocr";
 
     private Step step;
@@ -224,163 +198,6 @@ public class MixedOcrPlugin implements IRestGuiPlugin, IStepPluginVersion2 {
     @Override
     public String getTitle() {
         return title;
-    }
-
-    @Override
-    public void initRoutes(Service http) {
-        http.path("/ocr", () -> {
-            http.post("/:jobId/done", (req, res) -> {
-                // write to db and check if stuff is done, then merge the two folders
-                long jobId = Long.parseLong(req.params("jobId"));
-                boolean fracture = req.headers("jobType").equals("fracture");
-                MixedOcrDao.setJobDone(jobId, fracture);
-                if (MixedOcrDao.isJobDone(jobId)) {
-                    int stepId = MixedOcrDao.getStepIdForJob(jobId);
-                    Step step = StepManager.getStepById(stepId);
-                    HelperSchritte hs = new HelperSchritte();
-                    if (mergeDirs(jobId, step) && fillMissingAlto(step, getConfig(step))) {
-                        hs.CloseStepObjectAutomatic(step);
-                    } else {
-                        Helper.addMessageToProcessJournal(step.getProzess().getId(), LogType.ERROR,
-                                "Error merging OCR results",
-                                "Goobi OCR plugin");
-                        hs.errorStep(step);
-                    }
-                }
-                return "";
-            });
-            http.get("/info", (req, res) -> {
-                return "plugin " + title + " is loaded properly.\n";
-            });
-        });
-
-    }
-
-    private boolean fillMissingAlto(Step step, SubnodeConfiguration conf) {
-        try {
-            Path altoDir = Paths.get(step.getProzess().getOcrAltoDirectory());
-            if (!Files.exists(altoDir)) {
-                // maybe there is no alto needed here...
-                log.warn("no alto dir found. Skip adding missing alto!");
-                return true;
-            }
-            final Set<String> altoNames = new HashSet<>(Arrays.asList(altoDir.toFile().list()));
-            String sourceDirStr =
-                    conf.getBoolean("useOrigDir") ? step.getProzess().getImagesOrigDirectory(false) : step.getProzess().getImagesTifDirectory(false);
-            Path sourceDir = Paths.get(sourceDirStr);
-            String[] sourceFiles = sourceDir.toFile().list();
-            List<String> missingAlto = filterMissingAlto(altoNames, sourceFiles);
-            for (String altoName : missingAlto) {
-                createEmptyAlto(altoDir.resolve(altoName));
-            }
-        } catch (SwapException | DAOException | IOException e) {
-            log.error(e);
-            return false;
-        }
-        return true;
-    }
-
-    public static void createEmptyAlto(Path altoPath) throws IOException {
-        AltoDocument emptyAlto = new AltoDocument();
-        Chapter chap = new Chapter();
-        emptyAlto.addChild(chap);
-        Page p = new Page();
-        p.addAdditionalAttribute(new Attribute("PHYSICAL_IMG_NR", "1"));
-        chap.addChild(p);
-        Element el = emptyAlto.writeToDom();
-        XMLOutputter xmlOut = new XMLOutputter(Format.getPrettyFormat());
-        try (OutputStream out = Files.newOutputStream(altoPath)) {
-            xmlOut.output(el, out);
-        }
-    }
-
-    public static List<String> filterMissingAlto(Set<String> altoNames, String[] sourceFiles) {
-        return Arrays.stream(sourceFiles).map(name -> {
-            return name.substring(0, name.lastIndexOf('.')) + ".xml";
-        }).filter(name -> !altoNames.contains(name)).collect(Collectors.toList());
-    }
-
-    private boolean mergeDirs(long jobId, Step step) {
-        try {
-            Path antiquaTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId, "antiqua", "ocr");
-            Path fractureTargetDir = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId, "fracture", "ocr");
-
-            Path ocrDir = Paths.get(step.getProzess().getOcrDirectory());
-            renameOldOcrDirs(ocrDir);
-
-            if (Files.exists(antiquaTargetDir)) {
-                copyToOcrDir(antiquaTargetDir, ocrDir, step.getProzess().getTitel());
-            }
-            if (Files.exists(fractureTargetDir)) {
-                copyToOcrDir(fractureTargetDir, ocrDir, step.getProzess().getTitel());
-            }
-            Path delP = Paths.get(step.getProzess().getProcessDataDirectory(), "ocr_partial_" + jobId);
-            if (Files.exists(delP) && Files.isDirectory(delP) && delP.getFileName().toString().startsWith("ocr_par")) {
-                FileUtils.deleteQuietly(delP.toFile());
-            }
-
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            log.error(e);
-            return false;
-        } catch (SwapException e) {
-            // TODO Auto-generated catch block
-            log.error(e);
-            return false;
-        }
-        return true;
-    }
-
-    private void renameOldOcrDirs(Path path) throws IOException {
-        if (Files.exists(path)) {
-            Path newPath = Paths.get(path.toString() + 1);
-            if (Files.exists(newPath)) {
-                renameOldOcrDirs(path, newPath, 1);
-            }
-            Files.move(path, newPath);
-        }
-        Files.createDirectories(path);
-    }
-
-    private void renameOldOcrDirs(Path origPath, Path path, int i) throws IOException {
-        i++;
-        Path newPath = Paths.get(origPath.toString() + i);
-        if (Files.exists(newPath)) {
-            renameOldOcrDirs(origPath, newPath, i);
-        }
-        Files.move(path, newPath);
-    }
-
-    private void copyToOcrDir(Path sourceDir, Path ocrDir, String processTitle) throws IOException {
-        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(sourceDir)) {
-            for (Path p : dirStream) {
-                String targetName = getTargetName(p.getFileName().toString(), processTitle);
-                Path targetDir = ocrDir.resolve(targetName);
-                if (!Files.exists(targetDir)) {
-                    Files.createDirectories(targetDir);
-                }
-                try (DirectoryStream<Path> innerStream = Files.newDirectoryStream(p)) {
-                    for (Path copyFile : innerStream) {
-                        Files.copy(copyFile, targetDir.resolve(copyFile.getFileName()), StandardCopyOption.REPLACE_EXISTING);
-                    }
-                }
-            }
-        }
-    }
-
-    private String getTargetName(String sourceFolder, String processTitle) {
-        String[] split = sourceFolder.split("_");
-        return processTitle + "_" + split[split.length - 1];
-    }
-
-    @Override
-    public String[] getJsPaths() {
-        return new String[0];
-    }
-
-    @Override
-    public void extractAssets(Path assetsPath) {
-        // no assets
     }
 
     @Override
