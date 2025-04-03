@@ -3,7 +3,7 @@
   <parent>
     <groupId>io.goobi.workflow.plugin</groupId>
     <artifactId>plugin-step-mixed-ocr</artifactId>
-    <version>25.03</version>
+    <version>25.04-SNAPSHOT</version>
   </parent>
   <artifactId>plugin-step-mixed-ocr-lib</artifactId>
   <packaging>jar</packaging>
