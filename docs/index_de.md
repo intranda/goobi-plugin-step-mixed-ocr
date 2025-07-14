@@ -2,7 +2,7 @@
 title: OCR-Durchführung mit gemischten Schrifttypen
 identifier: intranda_step_mixedocr
 published: true
-description: Dies ist die technische Dokumentation für das Goobi-Plugin zur Durchführung von OCR mit gemischten Schrifttypen. Die Markierung der Bilder sollte mit dem Plugin "OCR Seitenauswahl" erfolgen.
+description: Dies ist die technische Dokumentation für das Goobi-Plugin zur Durchführung von OCR mit gemischten Schrifttypen. Die Markierung der Bilder sollte mit dem Plugin 'OCR Seitenauswahl' erfolgen.
 ---
 ## Einführung
 Die vorliegende Dokumentation beschreibt die Installation, Konfiguration und den Einsatz eines Plugins zur OCR-Durchführung mit gemischten Schrifttypen. Dieses Plugin ist nur in Zusammenarbeit mit dem Plugin ["OCR Seitenauswahl"](intranda_step_ocrselector.md) nützlich.
