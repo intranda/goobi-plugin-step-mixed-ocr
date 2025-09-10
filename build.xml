@@ -7,7 +7,7 @@
 		<exec executable="curl">
 			<arg value="-X"/>
 			<arg value="PUT"/>
-			<arg value="http://localhost:8080/goobi/plugins/reload"/>
+			<arg value="http://localhost:8080/goobi/api/plugins/reload"/>
 			<arg value="-H"/>
 			<arg value="token: geheim"/>
 		</exec>

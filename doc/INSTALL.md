@@ -19,6 +19,7 @@ Außerdem sollte noch die Goobi REST config unter `/opt/digiverso/goobi/config/g
 <endpoint path="/plugins/ocr.*">
     <method name="post">
         <allow netmask="127.0.0.0/8" token="Xasheax7ai"/>
+        <allow netmask="0:0:0:0:0:0:0:1/128" token="Xasheax7ai"/>
     </method>
 </endpoint>
 ```
