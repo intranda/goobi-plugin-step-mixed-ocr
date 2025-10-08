@@ -49,7 +49,7 @@ The content of the configuration file `plugin_intranda_step_mixedocr.xml` must b
         <template>template.xml</template>
         <itmUrl>http://localhost:8080/itm/service</itmUrl>
         <!--  this must be without a trailing slash -->
-        <callbackBaseUrl>http://localhost:8080/goobi</callbackBaseUrl>
+        <callbackBaseUrl>http://localhost:8080/goobi/api</callbackBaseUrl>
         <useOrigDir>false</useOrigDir>
         <serverType>intranda-tesseract</serverType>
     </config>
@@ -62,7 +62,7 @@ The content of the configuration file `plugin_intranda_step_mixedocr.xml` must b
 
         <template>template_pdfonly.xml</template>
         <itmUrl>https://itm.mydomain.tld/itm/service</itmUrl>
-        <callbackBaseUrl>https://goobi.mydomain.tld/goobi</callbackBaseUrl>
+        <callbackBaseUrl>https://goobi.mydomain.tld/goobi/api</callbackBaseUrl>
         <useOrigDir>true</useOrigDir>
         <serverType>intranda-tesseract</serverType>
     </config>
@@ -78,6 +78,7 @@ In addition to this plugin-specific configuration, the file `/opt/digiverso/goob
 <endpoint path="/plugins/ocr.*">
     <method name="post">
         <allow netmask="127.0.0.0/8" token="mytoken"/>
+        <allow netmask="0:0:0:0:0:0:0:1/128" token="mytoken"/>
     </method>
 </endpoint>
 ```

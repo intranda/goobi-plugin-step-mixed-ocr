@@ -32,7 +32,7 @@
         <template>template.xml</template>
 		<itmUrl>http://localhost:8080/itm/service</itmUrl>
 		<!--  this must be without a trailing slash -->
-		<callbackBaseUrl>http://localhost:8080/goobi</callbackBaseUrl>
+		<callbackBaseUrl>http://localhost:8080/goobi/api</callbackBaseUrl>
 		<useOrigDir>false</useOrigDir>
 		<serverType>intranda-abbyy</serverType>
     </config>
@@ -45,7 +45,7 @@
 		
 		<template>template_pdfonly.xml</template>
 		<itmUrl>https://itm.mydomain.tld/itm/service</itmUrl>
-		<callbackBaseUrl>https://goobi.mydomain.tld/goobi/</callbackBaseUrl>
+		<callbackBaseUrl>https://goobi.mydomain.tld/goobi/api</callbackBaseUrl>
 		<useOrigDir>true</useOrigDir>
 		<serverType>intranda-abbyy</serverType>
     </config>
