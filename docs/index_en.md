@@ -3,6 +3,10 @@ title: OCR execution with mixed fonts
 identifier: intranda_step_mixedocr
 published: true
 description: This is the technical documentation for the Goobi plugin for performing OCR with mixed fonts. Images should be marked with the 'OCR Page Selection' plugin.
+keywords:
+    - Goobi workflow
+    - Plugin
+    - Step Plugin
 ---
 ## Introduction
 This documentation describes the installation, configuration and use of a plug-in for OCR with mixed fonts. This plugin is only useful in combination with the plugin "OCR Page Selection".
