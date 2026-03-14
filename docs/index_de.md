@@ -26,7 +26,7 @@ Voraussetzung für die Verwendung des Plugins ist die korrekte Installation und 
 
 
 ## Überblick und Funktionsweise
-Nachdem das Plugin installiert und Konfiguriert wurde, muss es noch in Goobi workflow zu einem Arbeitsschritt hinzugefügt werden.
+Nachdem das Plugin installiert und konfiguriert wurde, muss es noch in Goobi workflow zu einem Arbeitsschritt hinzugefügt werden.
 
 ![Konfiguration des Schritts in Goobi Workflow](screen1.png)
 
@@ -34,7 +34,7 @@ Das Plugin wird üblicherweise automatisch ausgeführt, deshalb sollte der Haken
 
 
 # Konfiguration
-Der Inhalt de Konfigurationsdatei `plugin_intranda_step_mixedocr.xml` muss folgendermaßen aufgebaut sein:
+Der Inhalt der Konfigurationsdatei `plugin_intranda_step_mixedocr.xml` muss folgendermaßen aufgebaut sein:
 
 ```xml
 <config_plugin>
@@ -72,7 +72,7 @@ Der Inhalt de Konfigurationsdatei `plugin_intranda_step_mixedocr.xml` muss folge
     </config>
 ```
 
-Es sind mehrere Konfigurationen für verschiedene Projekte und Schitte möglich. Diese werden per `<project>` und `<step>` festgelegt. Es ist auch die Wildcard `*` möglich, die für alle Schritte bzw. Projekte greift. Die eigentliche Konfiguration findet dann innerhalb der `<config>` Elemente statt.
+Es sind mehrere Konfigurationen für verschiedene Projekte und Schritte möglich. Diese werden per `<project>` und `<step>` festgelegt. Es ist auch die Wildcard `*` möglich, die für alle Schritte bzw. Projekte greift. Die eigentliche Konfiguration findet dann innerhalb der `<config>` Elemente statt.
 
 Das `<template>` ist das Template, das der TaskManager benutzen soll, die `<itmUrl>` ist die URL zum Endpoint des TaskManagers, der neue Jobs annimmt. Die `<callbackBaseUrl>` muss eine URL sein, die vom TaskManager aus erreicht werden kann und zur Goobi-Installation zeigt, in der das Plugin installiert ist. Sie wird benötigt, um den Schritt nach der erfolgreichen OCR wieder zu schließen. Das Element `<useOrigDir>` bestimmt, ob für die OCR die Masterbilder oder die Derivate genutzt werden sollen. Der Eintrag `<serverType>` ist der im intranda LizenzServer eingetragene Wert für den Server, über den die OCR durchgeführt werden soll. Dieser Wert kann bei intranda angefragt werden oder bei der Nutzung eines anderen OCR Providers ausgelassen werden.
 
