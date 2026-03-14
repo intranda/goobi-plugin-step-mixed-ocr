@@ -9,7 +9,7 @@ keywords:
     - Step Plugin
 ---
 ## Introduction
-This documentation describes the installation, configuration and use of a plug-in for OCR with mixed fonts. This plugin is only useful in combination with the plugin "OCR Page Selection".
+This documentation describes the installation, configuration and use of a plug-in for OCR with mixed fonts. This plugin is only useful in combination with the plugin ["OCR Page Selection"](../goobi-plugin-step-ocr-selector) nützlich.
 
 
 ## Installation
