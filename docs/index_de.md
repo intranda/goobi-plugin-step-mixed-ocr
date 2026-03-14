@@ -9,7 +9,7 @@ keywords:
     - Step Plugin
 ---
 ## Einführung
-Die vorliegende Dokumentation beschreibt die Installation, Konfiguration und den Einsatz eines Plugins zur OCR-Durchführung mit gemischten Schrifttypen. Dieses Plugin ist nur in Zusammenarbeit mit dem Plugin ["OCR Seitenauswahl"](../goobi-plugin-step-ocr-selector) nützlich.
+Die vorliegende Dokumentation beschreibt die Installation, Konfiguration und den Einsatz eines Plugins zur OCR-Durchführung mit gemischten Schrifttypen. Dieses Plugin ist nur in Zusammenarbeit mit dem Plugin ["OCR Seitenauswahl"](/de/workflow/plugins/step/goobi-plugin-step-ocr-selector) nützlich.
 
 
 ## Installation und Konfiguration
